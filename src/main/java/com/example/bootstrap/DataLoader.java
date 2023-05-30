@@ -1,0 +1,67 @@
+package com.example.bootstrap;
+
+import com.example.model.Instrument;
+import com.example.model.PriceData;
+import com.example.service.PriceTrackingService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+@Configuration
+@Profile("!prod")
+@Slf4j
+public class DataLoader implements CommandLineRunner {
+
+    private final Environment environment;
+    private final PriceTrackingService priceTrackingService;
+
+    private final List<PriceData> priceDataFixedList = List.of(
+            new PriceData("1", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 1),//Update needed
+            new PriceData("2", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 2),//Update needed
+            new PriceData("3", LocalDateTime.of(LocalDate.of(2011, 1, 1), LocalTime.of(1, 1, 1)), 33),//Update needed
+            new PriceData("3", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 3),//No Need!
+            new PriceData("2", LocalDateTime.of(LocalDate.of(2009, 1, 1), LocalTime.of(1, 1, 1)), 222),//No Need
+            new PriceData("1", LocalDateTime.of(LocalDate.of(2020, 1, 1), LocalTime.of(1, 1, 1)), 11),//Update needed
+            new PriceData("2", LocalDateTime.of(LocalDate.of(2020, 1, 1), LocalTime.of(1, 1, 1)), 22),//Update needed
+            new PriceData("1", LocalDateTime.of(LocalDate.of(2009, 1, 1), LocalTime.of(1, 1, 1)), 111)//No Need
+    );
+    private final Map<String, Instrument> instrumentFixedMap = Map.ofEntries(
+            Map.entry("1", new Instrument("1", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 100)),
+            Map.entry("2", new Instrument("2", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 200)),
+            Map.entry("3", new Instrument("3", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 300)),
+            Map.entry("4", new Instrument("4", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 400)),
+            Map.entry("5", new Instrument("5", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 500)),
+            Map.entry("6", new Instrument("6", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 600)),
+            Map.entry("7", new Instrument("7", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 700)),
+            Map.entry("8", new Instrument("8", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 800)),
+            Map.entry("9", new Instrument("9", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 900))
+    );
+
+
+    public DataLoader(Environment environment, PriceTrackingService priceTrackingService) {
+        this.environment = environment;
+        this.priceTrackingService = priceTrackingService;
+    }
+
+    @Override
+    public void run(String... args) {
+        log.info("#data are loading.....");
+        loadData();
+        log.info("#Currently active profile - " + Arrays.toString(environment.getActiveProfiles()));
+
+    }
+
+    public void loadData() {
+        priceTrackingService.putAll(instrumentFixedMap);
+        log.info("#Template data are loaded. Size of loaded data is: " + priceTrackingService.size());
+    }
+}
