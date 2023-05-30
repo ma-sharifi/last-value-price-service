@@ -31,6 +31,8 @@ public class CaffeineCacheConfig {
         return Caffeine
                 .newBuilder()
                 .initialCapacity(10_000)
+                //.weakKeys()
+                //.weakValues() TODO, I need to consider more, why either key or values are weak, when I call .get the result will be null.
                 .softValues()//Cache to use soft references for values.
                 .expireAfterAccess(10, TimeUnit.MINUTES) // Expires after 10 minute since the last access. The all data of batch will be removed after this time. Takes precedence over the expireAfterWrite
                 .build();
@@ -47,7 +49,6 @@ public class CaffeineCacheConfig {
         return Caffeine
                 .newBuilder()
                 .initialCapacity(10_000)
-                .softValues()//Evict when the garbage collector needs to free memory
                 .expireAfterAccess(1, TimeUnit.DAYS) //
                 .build();
     }

@@ -28,7 +28,7 @@ public class ProducePrice {
     private static final int partitionSize = 1000;//Number of records in a chunks.
 
     //Define client users
-    private static final int requestNo = 100;
+    private static final int requestNo = 1000;
     private static final int threadsNo = 100;
 
     public static void main(String[] args) {
@@ -39,7 +39,7 @@ public class ProducePrice {
             for (int j = 0; j < requestNo / threadsNo; j++) {
                 var latchUser = new CountDownLatch(threadsNo);
                 for (int i = 0; i < threadsNo; i++) {
-                    System.out.println("#Batch No: " + (i + 1) * (j + 1) + "/" + (threadsNo));
+                    System.out.println("#Batch No: " + (i + 1) * (j + 1) + "/" + ((requestNo/threadsNo)*threadsNo));
                     threadPool.execute(() -> {
                         try {//--------------one batch------
                             PriceDataTestGenerator.Pair pair = PriceDataTestGenerator.generateRandomPriceDataList(recordRandomNo);
@@ -47,7 +47,6 @@ public class ProducePrice {
                             insertInstruments(instrumentList);
 
                             List<PriceData> priceDataRandomList = pair.priceDataList();
-                            insertPriceList(priceDataRandomList);
                             insertPriceList(priceDataRandomList);
 
                             latchUser.countDown();
