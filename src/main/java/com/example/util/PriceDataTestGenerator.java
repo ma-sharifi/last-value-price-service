@@ -45,7 +45,7 @@ public interface PriceDataTestGenerator {
         Map<String,Instrument> instrumentMap = new HashMap<>();
 
         for (int i = 0; i < size; i++) {
-            var randomId = RandomStringUtils.randomNumeric(5)+"-"+ RandomStringUtils.randomAlphabetic(5);
+            var randomId = i+"";//RandomStringUtils.randomNumeric(5)+"-"+ RandomStringUtils.randomAlphabetic(5);
             var threadLocalRandom=ThreadLocalRandom.current();
             var randomPayload = threadLocalRandom.nextInt(1,10000);
             var randomAsOf = generateRandomDateTime(0);

@@ -26,13 +26,13 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
     public static final int UPDATER_WORKER_THREAD_NO = 5;//Number of updater worker threads. This number is obtained from the load test
 
     @Autowired
-    private Cache<String, BlockingQueue<PriceData>> PRICE_DATA_TO_BQUEUE_CACHE; // It holds batch data, key is batchId. It can remove unconsumed batchId after specified time
+    private Cache<String, BlockingQueue<PriceData>> priceDataChunkCache; // It holds batch data, key is batchId. It can remove unconsumed batchId after specified time. We can set a fix size for it and reject more than this number for backpressure mechanism.
 
     @Autowired
     private Cache<String, Instrument> instrumenCache;//The latest-updated instrument data holds into this cache
 
     @Autowired
-    private Cache<String, AtomicInteger> UPDATE_COUNTER_MAP;//Keep how many instruments are updated by this batch. Key is batchId
+    private Cache<String, AtomicInteger> updateCounterCache;//Keep how many instruments are updated by this batch. Key is batchId
 
     private static final BlockingQueue<WeakReference<Instrument>> INSTRUMNET_STORAGE_UPDATER_BQUEUE = new LinkedBlockingDeque<>();
     //This service provides storage/database operation for us
@@ -55,8 +55,8 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
     @Override
     public String startBatchRun() {
         var batchId = UUID.randomUUID().toString();
-        PRICE_DATA_TO_BQUEUE_CACHE.put(batchId,new LinkedBlockingDeque<>()); //initialize a batch
-        UPDATE_COUNTER_MAP.put(batchId, new AtomicInteger(0)); //initialize counter
+        priceDataChunkCache.put(batchId,new LinkedBlockingDeque<>()); //initialize a batch
+        updateCounterCache.put(batchId, new AtomicInteger(0)); //initialize counter
         return batchId;
     }
 
@@ -68,10 +68,10 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
      */
     @Override
     public void uploadPriceData(String batchId, List<PriceData> priceDataList) {
-        if (PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId) == null)
+        if (priceDataChunkCache.getIfPresent(batchId) == null)
             throw new IllegalStateException("Illegal state in uploadPriceData is detected! You should start a batch at first! batchId: " + batchId);
-        assert PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId) != null;
-        PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId).addAll(priceDataList);
+        assert priceDataChunkCache.getIfPresent(batchId) != null;
+        priceDataChunkCache.getIfPresent(batchId).addAll(priceDataList);
     }
 
     /**
@@ -81,10 +81,10 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
      */
     @Override
     public synchronized void completeBatchRun(String batchId) {
-        if (PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId) == null)
+        if (priceDataChunkCache.getIfPresent(batchId) == null)
             throw new IllegalStateException("Illegal state in completeBatchRun is detected! You should start a batch at first!  batchId: " + batchId);
 
-        BlockingQueue<PriceData> queueOneBatch = PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId);
+        BlockingQueue<PriceData> queueOneBatch = priceDataChunkCache.getIfPresent(batchId);
         assert queueOneBatch != null;
         queueOneBatch.forEach(priceData -> {
                     var instrument = getLastPrice(priceData.id());// Read an instrument from cache or storage/database
@@ -93,7 +93,7 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
                         updateStorageAndCache(batchId, instrumentUpdated);
                     }
                 });
-        PRICE_DATA_TO_BQUEUE_CACHE.invalidate(batchId);//remove the batch id (remove the batch), it means remove all data about these chunk of records.
+        priceDataChunkCache.invalidate(batchId);//remove the batch id (remove the batch), it means remove all data about these chunk of records.
     }
 
     /**
@@ -102,9 +102,9 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
      */
     @Override
     public void cancelBatchRun(String batchId) {
-        if (PRICE_DATA_TO_BQUEUE_CACHE.getIfPresent(batchId) == null)
+        if (priceDataChunkCache.getIfPresent(batchId) == null)
             throw new IllegalStateException("Illegal state in cancelBatchRun! You should start a batch at first!  batchId: " + batchId);
-        PRICE_DATA_TO_BQUEUE_CACHE.invalidate(batchId);
+        priceDataChunkCache.invalidate(batchId);
     }
 
     private void updateStorageAndCache(String batchId, Instrument instrumentUpdated) {
@@ -112,7 +112,7 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
         WeakReference<Instrument> weakInstrument = new WeakReference<>(instrumentUpdated);
         INSTRUMNET_STORAGE_UPDATER_BQUEUE.add(weakInstrument);//database need to be updated
         instrumenCache.put(instrumentUpdated.id(), instrumentUpdated);//Update cache
-        UPDATE_COUNTER_MAP.getIfPresent(batchId).getAndIncrement(); //increment update counter of the batch
+        updateCounterCache.getIfPresent(batchId).getAndIncrement(); //increment update counter of the batch
     }
 
     /**
@@ -147,6 +147,7 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
             while (true) {
                 var weakInstrument = INSTRUMNET_STORAGE_UPDATER_BQUEUE.take(); // Blocking call - waits until an element is available
                 Instrument instrument = Instrument.of(Objects.requireNonNull(weakInstrument.get()));
+                System.out.println("#instrument: "+instrument);
                 instrumentStorage.put(instrument.id(), instrument);
             }
         } catch (InterruptedException exception) {
@@ -183,7 +184,7 @@ public class InMemoryPriceTrackingService implements PriceTrackingService {
 
     @Override
     public int updateCounter(String batchId) {
-        AtomicInteger counter = UPDATE_COUNTER_MAP.getIfPresent(batchId);
+        AtomicInteger counter = updateCounterCache.getIfPresent(batchId);
         if (counter != null) return counter.get();
         return -1;
     }

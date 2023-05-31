@@ -29,7 +29,7 @@ public class ProducePrice {
 
     //Define client users
     private static final int requestNo = 1000;
-    private static final int threadsNo = 100;
+    private static final int threadsNo = 40;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
