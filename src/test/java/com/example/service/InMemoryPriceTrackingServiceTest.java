@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Slf4j
 class InMemoryPriceTrackingServiceTest {
 
-    public static final int STORAGE_UPDATER_THREAD_NO = 10;
+    public static final int STORAGE_UPDATER_THREAD_NO = 2;
     @Autowired
     private PriceTrackingService service;
 
@@ -37,7 +37,7 @@ class InMemoryPriceTrackingServiceTest {
     private static List<Instrument> instrumentList = new ArrayList<>(); // defined as a field due to aggregate the messages.
 
     static final int recordNo = 100_000;// Number of PriceData Object
-    static final int partitionSize = 10_000;//Number of records in a chunks.
+    static final int partitionSize = 1_000;//Number of records in a chunks.
 
     //Define client users
     static final int requestNo = 500;
@@ -52,10 +52,10 @@ class InMemoryPriceTrackingServiceTest {
 
     void fillStorage() {
         service.putAll(instrumentList);//fill the storage with specific data
-//        ExecutorService threadPool = Executors.newFixedThreadPool(STORAGE_UPDATER_THREAD_NO);
-//        for (int i = 0; i < STORAGE_UPDATER_THREAD_NO; i++) {
-//            threadPool.execute(service);//create storage updater thread
-//        }
+        ExecutorService threadPool = Executors.newFixedThreadPool(STORAGE_UPDATER_THREAD_NO);
+        for (int i = 0; i < STORAGE_UPDATER_THREAD_NO; i++) {
+            threadPool.execute(service);//create storage updater thread
+        }
     }
 
     @Test
