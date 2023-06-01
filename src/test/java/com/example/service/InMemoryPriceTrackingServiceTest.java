@@ -36,11 +36,11 @@ class InMemoryPriceTrackingServiceTest {
     private static List<PriceData> priceDataList = new ArrayList<>(); // defined as a field due to aggregate the messages.
     private static List<Instrument> instrumentList = new ArrayList<>(); // defined as a field due to aggregate the messages.
 
-    static final int recordNo = 100000;// Number of PriceData Object
-    static final int partitionSize = 10000;//Number of records in a chunks.
+    static final int recordNo = 100_000;// Number of PriceData Object
+    static final int partitionSize = 10_000;//Number of records in a chunks.
 
     //Define client users
-    static final int requestNo = 1000;
+    static final int requestNo = 500;
     static final int threadsNo = 100; // Number of thread(users)
 
     @BeforeAll
@@ -61,7 +61,8 @@ class InMemoryPriceTrackingServiceTest {
     @Test
     void testStartUploadComplete_concurrent() throws InterruptedException {
         fillStorage();
-        log.info("#Storage: " + service.storageName() + " ;requestNo*Thread: " + requestNo * threadsNo + " ;recordNo: " + recordNo + " ;partitionSize: " + partitionSize + " ;service.size: " + service.size());
+        String system = "#max: " + Runtime.getRuntime().maxMemory() / (1024 * 1024) + " MB; free: " + Runtime.getRuntime().freeMemory() / (1024 * 1024) + " MB; total: " + Runtime.getRuntime().totalMemory() / (1024 * 1024) + " MB; core: " + Runtime.getRuntime().availableProcessors();
+        System.out.println("#Storage: " + service.storageName() + " ;requestNo*Thread: " + requestNo * threadsNo + " ;requestNo: " + requestNo+ " ;threadsNo: " + threadsNo +" ;recordNo: " + recordNo+ " ;partitionSize: " + partitionSize + " ;service.size: " + service.size() +" ->"+system);
         var start = Instant.now().toEpochMilli();
         service.putAll(instrumentList);
         var threadPool = Executors.newFixedThreadPool(threadsNo);
@@ -86,8 +87,8 @@ class InMemoryPriceTrackingServiceTest {
             latchUser.await(10, TimeUnit.SECONDS);
         }
         threadPool.shutdown();
-        String system = "#max: " + Runtime.getRuntime().maxMemory() / (1024 * 1024) + " MB; free: " + Runtime.getRuntime().freeMemory() / (1024 * 1024) + " MB; total: " + Runtime.getRuntime().totalMemory() / (1024 * 1024) + " MB; core: " + Runtime.getRuntime().availableProcessors();
-        System.out.println("#TIME: " + (System.currentTimeMillis() - start) + " ms" + " ;Thread: " + threadsNo + " pSize: " + partitionSize + " ;recordNo: " + recordNo + " ;" + system);
+        system = "#max: " + Runtime.getRuntime().maxMemory() / (1024 * 1024) + " MB; free: " + Runtime.getRuntime().freeMemory() / (1024 * 1024) + " MB; total: " + Runtime.getRuntime().totalMemory() / (1024 * 1024) + " MB; core: " + Runtime.getRuntime().availableProcessors();
+        System.out.println("#TIME: " + (System.currentTimeMillis() - start) + " ms" + " ;requestNo: " + requestNo+ " ;threadsNo: " + threadsNo +" ;recordNo: " + recordNo+ " ;partitionSize: " + partitionSize + " ;service.size: " + service.size() +" ->"+system);
     }
 
     private void splitStartUploadComplete(List<PriceData> batchListLocal, List<Instrument> instrumentExpectedList) {

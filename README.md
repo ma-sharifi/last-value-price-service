@@ -2,33 +2,8 @@
 2- diagram
 3- clean code\
 4- Ram Limited? Concurrent?
-Producer -> Write to file, consumer read from file;
-
-https://smallrye.io/smallrye-reactive-messaging/3.14.1/concepts/testing/
-
-? How mock object help me to test this code?
-?including cases where the producer produces data faster than the consumer can consume, or vice versa. Use assertions to verify that the expected behavior is met.
-https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.3/testing/testing.html
-   @BeforeAll
-    public static void switchMyChannels() {
-        InMemoryConnector.switchIncomingChannelsToInMemory("prices");
-        InMemoryConnector.switchOutgoingChannelsToInMemory("processed-prices");
-    }
-@Test
-    void test() {
-        // 4. Retrieves the in-memory source to send message
-        InMemorySource<Integer> prices = connector.source("prices");
-        // 5. Retrieves the in-memory sink to check what is received
-        InMemorySink<Integer> results = connector.sink("processed-prices");
-
-        // 6. Send fake messages:
-        prices.send(1);
-        prices.send(2);
-        prices.send(3);
-
-        // 7. Check you have receives the expected messages
-        Assertions.assertEquals(3, results.received().size());
-    }
+Why weakreference
+and why concurrent hashmap?
 
 # Last value price service V: 2.0
 
@@ -138,23 +113,55 @@ Provided a Global Exception handler to help handle exceptions in an easy way.
 4. If the entity was not found HTTP Status will be 404 (Not Found).
 5. If something unhandled occurred on the server-side the HTTP Status would be 500.
 
+## API
+I described all APIs here.
+
+### /batch/start
+1. Start a batch:
+* **POST**`/batch/start` HTTP Status: 200=OK
+* 
+2. Upload price data:
+* **POST**`/batch/{batchId}/upload` HTTP Status: 202=ACCEPTED
+* Status code is accepted because we don't do any process on our chunk
+*
+3. Complete a batch:
+* **POST**`/batch/{batchId}/complete` HTTP Status: 201=CREATED
+* Status code is created because we create a batch completely in server
+*
+4. Cancel a batch:
+* **POST**`/batch/{batchId}/cancel` HTTP Status: 200=OK
+* 
+5. Get the last price:
+* **GET**`/batch/{batchId}/cancel` HTTP Status: 200=OK
+
+I provided more 4 more API for test scenarios.
+
+An instrument json:
 ```json
   {
-  "id": "0",
+  "id": "2",
   "updatedAt": "2021-06-11T12:44:06",
-  "price": 7282
+  "price": 2
+}
+```
+An price data json:
+```json
+  {
+  "id": "2",
+  "asOf": "2021-06-11T12:44:16",
+  "payload": 2
 }
 ```
 
-```json
-  {
-  "id": "0",
-  "asOf": "2021-06-11T12:44:16",
-  "payload": 72820
-},
-```
-
 ### Test
+Test was the hardest part. This assignment it's like a Kafka. How doe we test Kafka?
+As you know it's hard. I tried different ways, generated random input, random file, put a file between consumer and producer, but all of them were not the thing i was looking for. I was looking for a simple way.
+[smallrye](https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.3/testing/testing.html) provided an in memory library for it. That put a queue in the same machine between them.
+I asked myself, how can I use this idea to test this code in a simple way?
+Eventually I found. The problem is about putting updated data into storage, but here I had a cache. It means the latest data are in the cache.
+I organized my data. I organized the data of Price Data and Instrument, the I just looking for this organized data.
+The getLastPrice method that is called by consumer get its data from cache. The problem solve, After I completed a batch I need to assert the result of getLastPrice with cache in serviceTest class.
+
 The system I used for test:
 * JVM: Java HotSpot(TM) 64-Bit Server VM (17.0.2+8-LTS-86, mixed mode, emulated-client, sharing)
 * Java: version 17.0.2, vendor Oracle Corporation
@@ -164,13 +171,39 @@ The system I used for test:
 * CPU: 2.3 GHz 8-Core Intel Core i9
 * RAM: 16 GB 2667 MHz DDR4
 * OS: macOS Ventura 13.3.1
-* Number of records in a batch: 5000
-* Number of records in a chunks(partitionSize): 1000
-* Number of requests: 1000
-* Number of threads (Concurrent producer): 100
+* Number of records in a batch: 100_000
+* Number of records in a chunks(partitionSize): 1_000
+* Number of requests: 5000
+* Number of threads (Concurrent producer): 100 , the number of request*thread is constant.
 
-# Improvement
+#TIME: 40013 ms ;requestNo: 1000 ;threadsNo: 50 ;recordNo: 100000 ;partitionSize: 10000 ;service.size: 100000 ->#max: 4096 MB; free: 1688 MB; total: 4096 MB; core: 16
+#TIME: 22413 ms ;requestNo: 500 ;threadsNo: 100 ;recordNo: 100000 ;partitionSize: 1000 ;service.size: 100000  ->#max: 4096 MB; free: 865 MB; total: 4096 MB; core: 16
+* It means if we have more consumer concurrent with the fix request*thread(50_000) number, the performance would be improved.
 
+#TIME: 23713 ms ;requestNo: 500 ;threadsNo: 100 ;recordNo: 100000 ;partitionSize: 10000 ;service.size: 100000 ->#max: 4096 MB; free: 992 MB; total: 4096 MB; core: 16
+![gc-100-thread](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/77b9ee13-bd0c-4935-9804-4434a728b2a8)
+
+#TIME: 40618 ms ;requestNo: 1000 ;threadsNo: 50 ;recordNo: 100000 ;partitionSize: 10000 ;service.size: 100000 ->#max: 4096 MB; free: 1722 MB; total: 4096 MB; core: 16
+![gc-50-thread](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/8eba9cb5-b813-45a0-8a0f-6365ba8d2286)
+
+From Time: 2023-06-01 12:21:41
+Used:3,107,982 kbytes
+Committed:4,194,304 kbytes
+Max:4,194,304 kbytes
+GC time:6.488 seconds on G1 Young Generation (141 collections)
+1.815 seconds on G1 Old Generation (4 collections)
+
+To Time: 023-06-01 12:27:46
+Used:2,015,188 kbytes
+Committed:4,194,304 kbytes
+Max:4,194,304 kbytes
+GC time:8.984 seconds on G1 Young Generation (117 collections)
+0.000 seconds on G1 Old Generation (0 collections)
+
+When we decreased our concurrent request (less consumer concurrent) G1 Old Generation is not used, 
+But the performance increased. Time from 40 second decreed to 23 seconds.
+
+## Improvement
 * Use Back pressure mechanism. Back pressure can help by limiting the queue size (user ArrayBlockingQueue for storage updater with a fixed size) and PriceData Cache(Each entry is belong to one batch, we can fix the size to 100 batch ), thereby maintaining a high throughput rate and good response times for jobs already in the queue. Once the queue/cache fills up, clients get a server busy or HTTP 503 status code to try again later.
 * Using Redis/Kafka as publisher/subscriber
 * Use redis as a cache to save our data when we put them in the StorageQueue in order to know which records is waiting to persis into storage.
@@ -186,7 +219,7 @@ The system I used for test:
 
 ## Conclusion
 1- If we have less item per chunk we will have more throughput.
-2- When I increased the database updater worker thread to 5, the performance increased.
+2- When I increased the database updater worker thread to 5, the performance increased. If you have more write you should increased this number.
 3- When I increased the number of concurrent producer to 100, the performance increased.
 4- WeakReference has less performance than strongly referenced.
 
