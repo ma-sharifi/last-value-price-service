@@ -9,8 +9,10 @@ import java.util.Map;
 
 /**
  * @author Mahdi Sharifi
- * Your task is to design and implement a service for keeping track of the last price for financial instruments. Producers will use the service to publish prices and consumers will use it to obtain them.
- * The service should be resilient against producers which call the service methods in an incorrect order, or clients which call the service while a batch is being processed.
+ * designd and implemented a service for keeping track of the last price for financial instruments.
+ * Producers will use the service to publish prices and consumers will use it to obtain them.
+ * The service is resilient against producers which call the service methods in an incorrect order,
+ * or clients which call the service while a batch is being processed.
  */
 public interface PriceTrackingService extends Runnable {
     String startBatchRun();

@@ -83,7 +83,7 @@ But user can start as many updater worker threads as required.
 
 * I used Caffeine, Guava MapMaker and Map as a storage, but at last I choose Map for sake of simplicity and it was faster in my test.
 
-## References
+## Memory References
 * Used ConcurrentHashMap with strong reference as database here for holding the instrument data.
 * WeakReference: A weak reference, simply put, is a reference that isn't strong enough to force an object to remain in memory. Weak references allow garbage collector's to collect it. It means that if no other strong references to the object exist, it can be garbage collected. I wanted to set the keys and values of the Caffeine cache weak for priceDataChunkCache, but it needs more time to add them, at this moment when I added weak references to Caffeine it can't return referenced data. It needs more time to consider.
 * Soft Reference: A weak reference object that remains in memory a bit more. Normally, it resists GC cycle until no memory is available and there is risk of OutOfMemoryError (in that case, it can be removed). It allows the object to be garbage collected if memory is low, but it tries to keep the object in memory as long as possible. I just wanted this for the cache of the instrument data(instrumenCache), because it stores the instrument data, we hold them as much as possible. 
@@ -98,10 +98,6 @@ There are 3 situation that I need to use cache in this project.
 1. Temporarily storing chunks of data until making the whole batch. If a consumer call to start a batch without finishing the batch with complete/cancel, data from this cache will be deleted after a certain period of time.
 2. Storage/database cache, when I put data into BlockingQueue to update storage, I put it into this cache to become reachable before updating the database by queue. After read from storage data will be stored to this cache as well in order to decrease database access. Data here can last more, based on our needs.
 3. Keeping how many update we had in a batch specified by batchId, it is used for metrics.
-
-## Exception
-Defined different Exceptions for different situations.
-Provided a Global Exception handler to help handle exceptions in an easy way.
 
 ## REST API (PriceTrackingEndpoint.java)
 For the sake of simplicity, I defined all operations in one endpoint. It would be better to isolate the thread pool of batch from other instrument operations. Thus batch will not affect an instrument API call.
@@ -144,15 +140,18 @@ An price data json:
   "payload": 2
 }
 ```
+## Exception
+* Defined different Exceptions for different situations.
+* Provided a Global Exception handler to help handle exceptions in an easy way.
 
 ## Test
-The test was the hardest part. This part looks like Kafka. So, how do we test Kafka?
-As you know it's hard. I tried different ways, generating random input, and random files put a file between consumer and producer, but all of them were not the thing I was looking for. I was looking for a simple way.
-[smallrye](https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.3/testing/testing.html) provided an in memory library for testing kafka. That put a queue in the same machine between them.
-I asked myself, how can I use this idea to test this code in a simple way?
-Eventually, I found it. The problem is about putting updated data into storage, but here I had a cache. It means the latest data are in the cache.
-The data I organized are changed by a simple law in every step. After organizing the data of Price Data and Instrument, I was just looking for this organized data, not random data.
-The getLastPrice method that is called by the consumer gets its data from the cache. The problem solve, After I completed a batch I need to assert the result of getLastPrice with instrument Cache in the serviceTest class.
+The test was the hardest part. This part looks like Kafka. So, how do we test Kafka?  
+As you know it's hard. I tried different ways, generating random input, and random files put a file between consumer and producer, but all of them were not the thing I was looking for. I was looking for a simple way.  
+[smallrye](https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.3/testing/testing.html) provided an in memory library for testing kafka. That put a queue in the same machine between them.  
+I asked myself, how can I use this idea to test this code in a simple way?  
+Eventually, I found it. The problem is about putting updated data into storage, but here I had a cache. It means the latest data are in the cache.  
+The data I organized are changed by a simple law in every step. After organizing the data of Price Data and Instrument, I was just looking for this organized data, not random data.  
+The getLastPrice method that is called by the consumer gets its data from the cache. The problem solve, After I completed a batch I need to assert the result of getLastPrice with instrument Cache in the serviceTest class.  
 
 ```java
 service.completeBatchRun(batchId);

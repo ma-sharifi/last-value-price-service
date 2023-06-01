@@ -4,6 +4,7 @@ import java.util.Map;
 
 /**
  * @author Mahdi Sharifi
+ * A facade on the storage layer
  */
 public interface StorageService<K, V> {
     V get(K key);

@@ -5,14 +5,12 @@ import com.example.storage.annotation.Storage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Mahdi Sharifi
+ * We can use ConcurrentHashMap as storage
  */
 @Service
 @Storage(Storage.Type.MAP)
