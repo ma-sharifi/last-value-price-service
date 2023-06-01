@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.model.Instrument;
 import com.example.model.PriceData;
+import com.github.benmanes.caffeine.cache.Cache;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ public interface PriceTrackingService extends Runnable {
 
     String storageName();
 
-    void putAll(Map<String, Instrument> instrumentMap);
+    void putAll(List<Instrument> instrumentList);
 
     long size();
 
@@ -34,4 +35,5 @@ public interface PriceTrackingService extends Runnable {
 
     int updateCounter(String batchId);
 
+    Cache<String, Instrument> getInstrumenCache();
 }

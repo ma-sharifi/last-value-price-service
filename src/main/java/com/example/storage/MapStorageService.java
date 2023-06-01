@@ -21,7 +21,6 @@ public class MapStorageService implements StorageService<String, Instrument> {
 
     private static final Map<String, Instrument> storage = new ConcurrentHashMap<>(5000_000);
     //Java already supports WeakHashMap to use Weak References for the keys. But, there is no out-of-the-box solution to use the same for the values.
-//    private static  Map<String, Instrument> storage= new WeakHashMap<>(10000);
 
     @Override
     public void put(String key, Instrument value) {

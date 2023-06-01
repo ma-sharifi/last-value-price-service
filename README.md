@@ -1,7 +1,7 @@
 1- Performance test
 2- diagram
 3- clean code\
-
+4- Ram Limited? Concurrent?
 Producer -> Write to file, consumer read from file;
 
 https://smallrye.io/smallrye-reactive-messaging/3.14.1/concepts/testing/
@@ -63,12 +63,12 @@ Each batch had a UUID that specified that batch.
 * There is a cache for holding all batch data based on batch id. Key is batchId and in value is the chunk of data of this batchId. Value is BlockingQueue.
 In complete batch process, I priceData from completed BlockingQueue and compare osOf field with instrument.updatedAt if osOf is after updated updatedAt I update the database. For this approach, I hadn't considered storage/database speed.
 Note: When we the speeds are not the same we will have the Queue, even at the store's counter and bank's counter.
-![design1](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/24ea4bd6-c21e-4287-8bf2-986f62f140d0)
+![first-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/19ca8d31-2b22-42dc-8137-5de441c397e5)
 
 ## Second approach
 * Since storage/database is not as fast as RAM, a BlokingQueue added before storage/database.
 As project progressed I found a problem with storage/database queue that had added in this step!
-![desing2](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/147ba46d-932e-49a4-b7ec-efbe250c85c0)
+![final-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/817b1e8e-9e51-4ff7-ba9f-11c5621a71ef)
 
 ## Third approach
 If some instruments are still in the queue waiting for their turn, so the database has not been updated, but another producer has generated the same instruments, how can we compare the price data with the instrument that still is in the queue, not the database?
@@ -126,6 +126,30 @@ This allows the garbage collector to collect and reclaim memory for cached objec
 ### Exception
 Defined different Exceptions for different situations.
 Provided a Global Exception handler to help handle exceptions in an easy way.
+
+## HTTP Status
+* Note: provided different HTTP Header for different situation.
+1. If the result of `GET` (stocks/1,/stocks) be success HTTP Status 200 and error_code 0.
+2. If the result of `POST` (create) be success, the response will contain HTTP Status 201 and error_code 0 and a Location with the url of the newly created entity in header (HTTP Header-> Location:/api/stocks/1).
+3. If something be not normal from the client side a HTTP Status 400 (Bad Request) will be return.
+4. If the entity was not found HTTP Status will be 404 (Not Found).
+5. If something unhandled occurred on the server-side the HTTP Status would be 500.
+
+```json
+  {
+  "id": "0",
+  "updatedAt": "2021-06-11T12:44:06",
+  "price": 7282
+}
+```
+
+```json
+  {
+  "id": "0",
+  "asOf": "2021-06-11T12:44:16",
+  "payload": 72820
+},
+```
 
 ### Test
 The system I used for test:

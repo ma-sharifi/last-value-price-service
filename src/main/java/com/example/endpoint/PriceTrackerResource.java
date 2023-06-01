@@ -32,8 +32,9 @@ public interface PriceTrackerResource {
     @GetMapping(value = "/{instrumentId}",produces = MediaType.APPLICATION_JSON_VALUE)//200
     Instrument getLastPrice(@PathVariable("instrumentId") String instrumentId)  throws RuntimeException;
 
-    @GetMapping(value = "/counter")//200
-    int getUpdateCounter(String batchId);
+    @GetMapping(value = "/batch/{batchId}/counter")//200
+    int getUpdateCounter(@PathVariable(value = "batchId" )String batchId);
+
 
     @GetMapping(value = "/storage")//200
     String storageName();

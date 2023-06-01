@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Configuration
 @Profile("!prod")
@@ -34,16 +33,16 @@ public class DataLoader implements CommandLineRunner {
             new PriceData("2", LocalDateTime.of(LocalDate.of(2020, 1, 1), LocalTime.of(1, 1, 1)), 22),//Update needed
             new PriceData("1", LocalDateTime.of(LocalDate.of(2009, 1, 1), LocalTime.of(1, 1, 1)), 111)//No Need
     );
-    private final Map<String, Instrument> instrumentFixedMap = Map.ofEntries(
-            Map.entry("1", new Instrument("1", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 100)),
-            Map.entry("2", new Instrument("2", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 200)),
-            Map.entry("3", new Instrument("3", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 300)),
-            Map.entry("4", new Instrument("4", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 400)),
-            Map.entry("5", new Instrument("5", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 500)),
-            Map.entry("6", new Instrument("6", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 600)),
-            Map.entry("7", new Instrument("7", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 700)),
-            Map.entry("8", new Instrument("8", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 800)),
-            Map.entry("9", new Instrument("9", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 900))
+    private final List<Instrument> instrumentFixedList = List.of(
+            new Instrument("1", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 100),
+            new Instrument("2", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 200),
+            new Instrument("3", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 300),
+            new Instrument("4", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 400),
+            new Instrument("5", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 500),
+            new Instrument("6", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 600),
+            new Instrument("7", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 700),
+            new Instrument("8", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 800),
+            new Instrument("9", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 900)
     );
 
 
@@ -61,7 +60,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     public void loadData() {
-        priceTrackingService.putAll(instrumentFixedMap);
+        priceTrackingService.putAll(instrumentFixedList);
         log.info("#Template data are loaded. Size of loaded data is: " + priceTrackingService.size());
     }
 }

@@ -31,8 +31,8 @@ public class CaffeineCacheConfig {
         return Caffeine
                 .newBuilder()
                 .initialCapacity(10_000)
-                //.weakKeys()// TODO, I need to consider more, why either key are weak, when I call .get the result will be null.
-//                .weakValues()
+//                .weakKeys()// TODO, I need to consider more, why either key are weak, when I call .get the result will be null.
+//                .softValues()
                 .expireAfterAccess(10, TimeUnit.MINUTES) // Expires after 10 minute since the last access. The all data of batch will be removed after this time. Takes precedence over the expireAfterWrite
                 .build();
     }
@@ -62,7 +62,7 @@ public class CaffeineCacheConfig {
         return Caffeine
                 .newBuilder()
                 .initialCapacity(10_000)
-//                .weakValues()
+//                .softValues()
                 .expireAfterAccess(10, TimeUnit.MINUTES) //The all data of batch will be removed after 10 minutes.
                 .build();
     }

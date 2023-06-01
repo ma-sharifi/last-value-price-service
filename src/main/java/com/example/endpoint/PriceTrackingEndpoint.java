@@ -5,6 +5,7 @@ import com.example.model.PriceData;
 import com.example.service.PriceTrackingService;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,20 +54,10 @@ public class PriceTrackingEndpoint implements PriceTrackerResource{
     }
 
     //---------------- This part developed because of test ----------
-    @PostMapping("load")
-    public long load(@RequestBody List<PriceData> priceDataList,@RequestParam(value = "psize" ,defaultValue = "1000") int partitionSize ) {
-        String batchId= priceTrackingService.startBatchRun();
-        List<List<PriceData>> partitionedData = Lists.partition(priceDataList, partitionSize);
-        for ( List<PriceData> partitionedDatum : partitionedData) {
-            priceTrackingService.uploadPriceData(batchId,partitionedDatum);
-        }
-        priceTrackingService.completeBatchRun(batchId);
-        return priceTrackingService.updateCounter(batchId);
-    }
     @PostMapping("")
-    public  long saveToStorage(@RequestBody List<Instrument> priceDataList) {
-        Map<String,Instrument> instrumentMap = priceDataList.stream().collect(Collectors.toMap(Instrument::id, Function.identity()));
-        priceTrackingService.putAll(instrumentMap);
+    @ResponseStatus(code = HttpStatus.CREATED)
+    public  long createInstrument(@RequestBody List<Instrument> priceDataList) {
+        priceTrackingService.putAll(priceDataList);
         return priceTrackingService.size();
     }
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
