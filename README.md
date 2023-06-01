@@ -68,8 +68,8 @@ Note: When we the speeds are not the same we will have the Queue, even at the st
 ## Second approach
 * Since storage/database is not as fast as RAM, a BlokingQueue added before storage/database.
 As project progressed I found a problem with storage/database queue that had added in this step!
-![final-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/817b1e8e-9e51-4ff7-ba9f-11c5621a71ef)
-
+![design2](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/b8d123dd-1613-420e-9054-43be9c255226)
+* 
 ## Third approach
 If some instruments are still in the queue waiting for their turn, so the database has not been updated, but another producer has generated the same instruments, how can we compare the price data with the instrument that still is in the queue, not the database?
 For example, InstrumentA is updated by producer1 but InstrumentA is still in the queue and it has not been persisted yet into storage/database, and producer2 produce a Price data of the instrumentA and now its producer2 turn to update instrumentA price?
@@ -78,7 +78,10 @@ If we read updated data from cache(is next to blocking queue, we put the instrum
 
 Five threads are considered for reading data from the storage queue and updating storage (This number is extracted from the load test).
 But user can start as many updater worker threads as required.
-![final-final](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/4210d1b4-ef8b-4774-8cbd-bf512957ef62)
+
+![final-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/e88f4cf6-4668-47b2-8f90-e20bddfe5836)
+
+
 
 ### Explain Price Tracking Service
 
@@ -165,6 +168,21 @@ The system I used for test:
 * Number of records in a chunks(partitionSize): 1000
 * Number of requests: 1000
 * Number of threads (Concurrent producer): 100
+
+# Improvement
+
+* Use Back pressure mechanism. Back pressure can help by limiting the queue size (user ArrayBlockingQueue for storage updater with a fixed size) and PriceData Cache(Each entry is belong to one batch, we can fix the size to 100 batch ), thereby maintaining a high throughput rate and good response times for jobs already in the queue. Once the queue/cache fills up, clients get a server busy or HTTP 503 status code to try again later.
+* Using Redis/Kafka as publisher/subscriber
+* Use redis as a cache to save our data when we put them in the StorageQueue in order to know which records is waiting to persis into storage.
+* Use Grid computing tools for processing priceData and compare them with Instrument data and send them Queue and Cache. There is no need to process them into our application.
+* Use sharding for storing data based on hash function into different storage. It means distributed our data base on a hash function, a simple hash function is, if the right bit of id is 0 route the data to cluster storage 0 and if is 1 route the data to cluster storage 1;
+* The most important thing about Map is set the right size when create it, because there is no need to rehash and moved all buckets again; We can set the estimate size based on our real data statistics.
+* Read the database data from slave/guard database ond use master just for inserting data. Also we can use Debezium for reading the database log inorder to completely separate read operation from database.
+* Use a unique message for communication with Generic payload to cover every type of objects and error. It means client needs always consume one type of object and get the data from its payload. For the sake of simplicity used text plane for returning the error response and batchId.
+* The constant numbers in the application should set from the statistics data that is extracted from production environment.
+* Using [toxiproxy](https://github.com/Shopify/toxiproxy) for simulating network conditions. Toxiproxy is the tool you need to prove with tests that your application doesn't have single points of failure.
+
+
 
 ## Conclusion
 1- If we have less item per chunk we will have more throughput.

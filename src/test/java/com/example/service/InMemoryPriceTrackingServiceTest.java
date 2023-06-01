@@ -36,8 +36,8 @@ class InMemoryPriceTrackingServiceTest {
     private static List<PriceData> priceDataList = new ArrayList<>(); // defined as a field due to aggregate the messages.
     private static List<Instrument> instrumentList = new ArrayList<>(); // defined as a field due to aggregate the messages.
 
-    static final int recordNo = 10000;// Number of PriceData Object
-    static final int partitionSize = 1000;//Number of records in a chunks.
+    static final int recordNo = 100000;// Number of PriceData Object
+    static final int partitionSize = 10000;//Number of records in a chunks.
 
     //Define client users
     static final int requestNo = 1000;
@@ -51,12 +51,11 @@ class InMemoryPriceTrackingServiceTest {
     }
 
     void fillStorage() {
-        //fill the storage with random data
-        service.putAll(instrumentList);
-        ExecutorService threadPool = Executors.newFixedThreadPool(STORAGE_UPDATER_THREAD_NO);
-        for (int i = 0; i < STORAGE_UPDATER_THREAD_NO; i++) {
-            threadPool.execute(service);//create storage updater thread
-        }
+        service.putAll(instrumentList);//fill the storage with specific data
+//        ExecutorService threadPool = Executors.newFixedThreadPool(STORAGE_UPDATER_THREAD_NO);
+//        for (int i = 0; i < STORAGE_UPDATER_THREAD_NO; i++) {
+//            threadPool.execute(service);//create storage updater thread
+//        }
     }
 
     @Test
