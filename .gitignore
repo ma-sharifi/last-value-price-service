@@ -173,3 +173,6 @@ Desktop.ini
 # ESLint
 ######################
 .eslintcache
+/instrument-actual.txt
+/instrument-expected.txt
+/pricedata.txt

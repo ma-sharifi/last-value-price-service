@@ -20,6 +20,8 @@ import static com.example.util.PriceDataTestGenerator.*;
 
 /**
  * @author Mahdi Sharifi
+ * @see Initializer
+ * It should call after Initializer
  */
 @Slf4j
 public class ProducePrice {
@@ -38,11 +40,7 @@ public class ProducePrice {
     private static final int threadsNo = 2;
 
     public static void main(String[] args) throws IOException {
-//        List<PriceData> priceDataList = PriceDataTestGenerator.readPriceDataJsonFile("./pricedata.txt");
-        Pair pair= PriceDataTestGenerator.generatePriceInstrumentList(recordNo,0);
-        List<PriceData> priceDataList = pair.priceDataList();
-        List<Instrument> instrumentActualList = pair.instrumentActualList();
-//        insertInstruments(instrumentActualList); //Fill storage
+        List<PriceData> priceDataList = PriceDataTestGenerator.readPriceDataJsonFile("./pricedata.txt");
 
         long start = System.currentTimeMillis();
         System.out.println("requestNo/threadsNo: " + requestNo / threadsNo + " ;Thread: " + threadsNo + " pSize: " + partitionSize + " ;recordNo: " + recordNo);
@@ -54,12 +52,8 @@ public class ProducePrice {
                     System.out.println("#Batch No: " + (i + 1) * (j + 1) + "/" + ((requestNo/threadsNo)*threadsNo));
                     final int step=i;
                     threadPool.execute(() -> {
-                        try {//--------------one batch------
-                            PriceDataTestGenerator.Triple triple=PriceDataTestGenerator.generatePriceInstrumentListTriple(recordNo,step);
-                            List<PriceData> prices=triple.priceDataList();
-                            List<Instrument> instruments=triple.instrumentExpectedList();
-                            insertPriceList(prices,instruments);
-
+                        try {//--------one batch------
+                            insertPriceList(priceDataList);
                             latchUser.countDown();
                         } catch (Exception exception) {
                             log.error("#Exception in sending a batch: " + exception.getMessage());
@@ -77,7 +71,7 @@ public class ProducePrice {
         }
     }
 
-    private static void insertPriceList(List<PriceData> priceDataRandomList,List<Instrument> instrumentExpectedlList) throws IOException {
+    private static void insertPriceList(List<PriceData> priceDataRandomList) throws IOException {
 
         //start a batch
         RequestBody bodyStart = RequestBody.create("", JSON);
@@ -119,19 +113,6 @@ public class ProducePrice {
                 .build();
         try (Response response = client.newCall(requestCounter).execute()) {
             System.out.println(batchId+ " ;counter.code: "+  response.body().string());
-        }
-    }
-    private static void insertInstruments(List<Instrument> instrumentList) throws IOException {
-        String json = GSON.toJson(instrumentList);
-
-        RequestBody body = RequestBody.create(json, JSON);
-        Request request = new Request.Builder()
-                .url(URL)
-                .post(body)
-                .build();
-        try (Response response = client.newCall(request).execute()) {
-            String result = response.body().string();
-            System.out.println("#insert-data-size: "+result);
         }
     }
 }

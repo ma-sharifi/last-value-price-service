@@ -94,7 +94,7 @@ class PriceTrackingEndpointTest {
                             .then().statusCode(200).assertThat().extract().as(Instrument.class);
                     assertThat(instrumentActual).isEqualTo(instrumentExpectedList.get(k));
                 }
-                System.out.println("#Price is fixed: " + (priceDataList.get(0).payload()));
+                System.out.println("#Price is freezed: " + (priceDataList.get(0).payload()));
                 startUploadComplete(priceDataList);
                 //consumer asserts the result with expected result
                 for (int k = 0; k < instrumentExpectedList.size(); k++) {

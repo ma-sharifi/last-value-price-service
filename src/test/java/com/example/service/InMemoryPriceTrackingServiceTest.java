@@ -59,7 +59,7 @@ class InMemoryPriceTrackingServiceTest {
     }
 
     @Test
-    void testStartUploadComplete_concurrent() throws InterruptedException {
+    void testStartUploadCompleteConcurrent() throws InterruptedException {
         fillStorage();
         String system = "#max: " + Runtime.getRuntime().maxMemory() / (1024 * 1024) + " MB; free: " + Runtime.getRuntime().freeMemory() / (1024 * 1024) + " MB; total: " + Runtime.getRuntime().totalMemory() / (1024 * 1024) + " MB; core: " + Runtime.getRuntime().availableProcessors();
         System.out.println("#Storage: " + service.storageName() + " ;requestNo*Thread: " + requestNo * threadsNo + " ;requestNo: " + requestNo+ " ;threadsNo: " + threadsNo +" ;recordNo: " + recordNo+ " ;partitionSize: " + partitionSize + " ;service.size: " + service.size() +" ->"+system);
@@ -104,9 +104,9 @@ class InMemoryPriceTrackingServiceTest {
 
         //assert data was read by service, with the data read by cache since cache always keep the updated data.
         for (Instrument instrument : instrumentExpectedList) {
-            Instrument actual = service.getLastPrice(instrument.id()); //read data by service
-            Instrument instrument2 = service.getInstrumenCache().getIfPresent(instrument.id()); //read data from cache
-            assertThat(actual).isEqualTo(instrument2);
+            Instrument instrumentActual = service.getLastPrice(instrument.id()); //read data by service
+            Instrument instrumentInCache = service.getInstrumenCache().getIfPresent(instrument.id()); //read data from cache
+            assertThat(instrumentActual).isEqualTo(instrumentInCache);
 //           assertThat(actual).isEqualTo(instrument); // it does not work, because there are some thread work concurrently and change data at the same time
         }
     }

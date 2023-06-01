@@ -13,6 +13,7 @@ import static com.example.util.PriceDataTestGenerator.GSON;
 
 /**
  * @author Mahdi Sharifi
+ * It put the data into our in memory storage/database
  */
 @Slf4j
 public class Initializer {
@@ -26,6 +27,7 @@ public class Initializer {
     private static final int recordRandomNo = 5000;// Number of PriceData Object
 
     public static void main(String[] args) throws IOException {
+        //generate json file that consumer and producer use them for uploading and consuming objects
         PriceDataTestGenerator.Pair pair = PriceDataTestGenerator.generateRandomPriceDataListSaveFile(recordRandomNo,1);
         insertInstruments(pair.instrumentActualList());
     }
@@ -40,7 +42,7 @@ public class Initializer {
                 .build();
         try (Response response = client.newCall(request).execute()) {
             String result = response.body().string();
-            System.out.println("#insert-data-size: "+result);
+            log.info("#insert-data-size: "+result);
         }
     }
 }

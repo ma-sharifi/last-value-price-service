@@ -23,16 +23,6 @@ public class DataLoader implements CommandLineRunner {
     private final Environment environment;
     private final PriceTrackingService priceTrackingService;
 
-    private final List<PriceData> priceDataFixedList = List.of(
-            new PriceData("1", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 1),//Update needed
-            new PriceData("2", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 2),//Update needed
-            new PriceData("3", LocalDateTime.of(LocalDate.of(2011, 1, 1), LocalTime.of(1, 1, 1)), 33),//Update needed
-            new PriceData("3", LocalDateTime.of(LocalDate.of(2010, 1, 1), LocalTime.of(1, 1, 1)), 3),//No Need!
-            new PriceData("2", LocalDateTime.of(LocalDate.of(2009, 1, 1), LocalTime.of(1, 1, 1)), 222),//No Need
-            new PriceData("1", LocalDateTime.of(LocalDate.of(2020, 1, 1), LocalTime.of(1, 1, 1)), 11),//Update needed
-            new PriceData("2", LocalDateTime.of(LocalDate.of(2020, 1, 1), LocalTime.of(1, 1, 1)), 22),//Update needed
-            new PriceData("1", LocalDateTime.of(LocalDate.of(2009, 1, 1), LocalTime.of(1, 1, 1)), 111)//No Need
-    );
     private final List<Instrument> instrumentFixedList = List.of(
             new Instrument("1", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 100),
             new Instrument("2", LocalDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(1, 1, 1)), 200),

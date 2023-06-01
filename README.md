@@ -5,10 +5,18 @@ Designed and implemented a service for keeping track of the last price for finan
 * Producers will use the service to publish prices 
 * Consumers will use it to obtain them.
 
-### Assumptions when solving the challenge:
+## How to run the application?
+This is a Spring Boot application that is written with Java 17.
+
+```shell
+mvn spring-boot:rund
+```
+## How to test service?
+Provided 2 junit test for Testing Endpoint(PriceTrackingEndpointTest.java) and Service(InMemoryPriceTrackingServiceTest.java), that you can run.
+
+## Assumptions when solving the challenge:
 * Simplicity is more important than other things. Tried to have a small code.
 * Storage here is a database that must persist data into the disk, it means storage is much slower than other data structure we used.
-* Assumed there are latest price always in our storage.
 * Assumed I can use Caffeine as a cache.
 * For sake of simplicity I did not define a new object as Payload, I assumed payload is price and nothing else!
 * Because we always check the instrument date with the price data date, and sometimes we need to update the storage, I take this application as "read bounded".
@@ -57,7 +65,7 @@ But user can start as many updater worker threads as required.
 
 ![final-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/e88f4cf6-4668-47b2-8f90-e20bddfe5836)
 
-### Explain Price Tracking Service
+## Explain Price Tracking Service (InMemoryPriceTrackingService.java)
 
 * Start Batch: Generate a batchId and return it as a response to producer. It is used for 2 purposes:
   * For resiliency: Protect the service against producers which call the service methods in an incorrect order
@@ -83,7 +91,7 @@ But user can start as many updater worker threads as required.
 
 ## Concurrency
 * Used, BlockingQueue, ConcurrentHashMap adn Caffeine, that make the application thread safe, but when I read the data from one an put to another one it I need to keep it atomic, I used synchronized for sake of simplicity.
-* Define the objects immutable, in order to use them safely in multithreading application.
+* Define the objects immutable (java record), in order to use them safely in multithreading application.
 
 ## Caffeine as a Cache
 There are 3 situation that I need to use cache in this project.
@@ -91,11 +99,11 @@ There are 3 situation that I need to use cache in this project.
 2. Storage/database cache, when I put data into BlockingQueue to update storage, I put it into this cache to become reachable before updating the database by queue. After read from storage data will be stored to this cache as well in order to decrease database access. Data here can last more, based on our needs.
 3. Keeping how many update we had in a batch specified by batchId, it is used for metrics.
 
-### Exception
+## Exception
 Defined different Exceptions for different situations.
 Provided a Global Exception handler to help handle exceptions in an easy way.
 
-## REST API
+## REST API (PriceTrackingEndpoint.java)
 For the sake of simplicity, I defined all operations in one endpoint. It would be better to isolate the thread pool of batch from other instrument operations. Thus batch will not affect an instrument API call.
 Described all API as follows:
 
@@ -137,7 +145,7 @@ An price data json:
 }
 ```
 
-### Test
+## Test
 The test was the hardest part. This part looks like Kafka. So, how do we test Kafka?
 As you know it's hard. I tried different ways, generating random input, and random files put a file between consumer and producer, but all of them were not the thing I was looking for. I was looking for a simple way.
 [smallrye](https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.3/testing/testing.html) provided an in memory library for testing kafka. That put a queue in the same machine between them.
@@ -146,7 +154,18 @@ Eventually, I found it. The problem is about putting updated data into storage, 
 The data I organized are changed by a simple law in every step. After organizing the data of Price Data and Instrument, I was just looking for this organized data, not random data.
 The getLastPrice method that is called by the consumer gets its data from the cache. The problem solve, After I completed a batch I need to assert the result of getLastPrice with instrument Cache in the serviceTest class.
 
-The system I used for test:
+```java
+service.completeBatchRun(batchId);
+for (Instrument instrument : instrumentExpectedList) {
+  Instrument instrumentActual = service.getLastPrice(instrument.id()); //read data by service
+  Instrument instrumentInCache = service.getInstrumenCache().getIfPresent(instrument.id()); //read data from cache
+  assertThat(instrumentActual).isEqualTo(instrumentInCache);
+}
+```
+
+* Note: My JMeter had a problem, I did not manage to use it, I put the application under load with the InMemoryPriceTrackingServiceTest.java and saw the result on VisualVM and JConsole.
+
+* The system I used for test:
 * JVM: Java HotSpot(TM) 64-Bit Server VM (17.0.2+8-LTS-86, mixed mode, emulated-client, sharing)
 * Java: version 17.0.2, vendor Oracle Corporation
 * GC: G1
@@ -190,6 +209,6 @@ But the performance about 60% improved.
 
 
 ## Conclusion
-1- If we have less item per chunk we will have a little bit better throughput.
-2- When I increased the database updater worker thread to 5, the performance increased. If you have more write you should increase this number of this worker thread.
-3- When I increased the number of concurrent producer to 100, the performance increased 60% rather than when I use half of this consumer with the fix request.
+* If we have more item per chunk we will have a little bit better throughput.
+* When the database updater worker thread increased to 5, the performance increased. If you have more write, you should increase the number of this worker thread.
+* When the number of concurrent producers increased to 100, the performance increased by 60%, in the same condition.
