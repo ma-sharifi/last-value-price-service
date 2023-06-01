@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.example.util.PriceDataTestGenerator.GSON;
-import static com.example.util.PriceDataTestGenerator.generateRandomPriceDataList;
 
 /**
  * @author Mahdi Sharifi
@@ -27,7 +26,7 @@ public class Initializer {
     private static final int recordRandomNo = 5000;// Number of PriceData Object
 
     public static void main(String[] args) throws IOException {
-        PriceDataTestGenerator.Pair pair = generateRandomPriceDataList(recordRandomNo,1);
+        PriceDataTestGenerator.Pair pair = PriceDataTestGenerator.generateRandomPriceDataListSaveFile(recordRandomNo,1);
         insertInstruments(pair.instrumentActualList());
     }
 

@@ -39,7 +39,6 @@ class PriceTrackingEndpointTest {
         baseURI = "http://localhost:" + port + "/instruments";
     }
 
-    //-----------
     private static final int recordRandomNo = 500;// Number of PriceData Object
     private static final int partitionSize = 100;//Number of records in a chunks.
 

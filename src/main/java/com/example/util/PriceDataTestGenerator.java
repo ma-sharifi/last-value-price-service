@@ -9,8 +9,7 @@ import com.example.model.PriceData;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.index.qual.SameLen;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -20,12 +19,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public interface PriceDataTestGenerator {
 
@@ -43,9 +38,30 @@ public interface PriceDataTestGenerator {
         List<PriceData> priceDataList = new ArrayList<>();
         List<Instrument> instrumentActualList = new ArrayList<>();
         List<Instrument> instrumentExpectedlList = new ArrayList<>();
-        Map<String, Instrument> instrumentMap = new HashMap<>();
         for (int i = 0; i < size; i++) {
-            var randomId = String.valueOf(i);
+            var threadLocalRandom = ThreadLocalRandom.current();
+            var randomId = threadLocalRandom.nextLong(10000)+ RandomStringUtils.randomAlphabetic(5);
+            var price = step;
+            var payload = step * 10;
+            var updatedAt = generateDateTime(step);
+            var instrument = new Instrument(randomId, updatedAt, price);
+            var asOfNew = LocalDateTime.ofEpochSecond(updatedAt.toEpochSecond(ZoneOffset.UTC) + 10, 0, ZoneOffset.UTC);// we can use random: generateRandomDateTime(1000000);
+            var priceData = new PriceData(randomId, asOfNew, payload);//Generate PriceData with time after that instrument
+            instrumentActualList.add(instrument);
+            priceDataList.add(priceData);
+            instrumentExpectedlList.add(new Instrument(instrument.id(), asOfNew, payload));
+        }
+        return new Pair(priceDataList, instrumentExpectedlList);
+    }
+
+    @SneakyThrows
+    static Pair generateRandomPriceDataListSaveFile(int size, int step) {
+        List<PriceData> priceDataList = new ArrayList<>();
+        List<Instrument> instrumentActualList = new ArrayList<>();
+        List<Instrument> instrumentExpectedlList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            var threadLocalRandom = ThreadLocalRandom.current();
+            var randomId = threadLocalRandom.nextLong(10000)+ RandomStringUtils.randomAlphabetic(5);
             var price = step;
             var payload = step * 10;
             var updatedAt = generateDateTime(step);
@@ -66,6 +82,7 @@ public interface PriceDataTestGenerator {
         Files.write(Paths.get("./instrument-expected.txt"), json.getBytes());
         return new Pair(priceDataList, instrumentExpectedlList);
     }
+
 
     @SneakyThrows
     static Pair generatePriceInstrumentList(int size, int step) {
