@@ -47,12 +47,13 @@ Each batch had a UUID that specified that batch.
 * There is a cache for holding all batch data based on batch id. Key is batchId and in value is the chunk of data of this batchId. Value is BlockingQueue.
 In complete batch process, I priceData from completed BlockingQueue and compare osOf field with instrument.updatedAt if osOf is after updated updatedAt I update the database. For this approach, I hadn't considered storage/database speed.
 Note: When we the speeds are not the same we will have the Queue, even at the store's counter and bank's counter.
-![first-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/19ca8d31-2b22-42dc-8137-5de441c397e5)
+![first](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/36d7a44a-2584-4bbe-94ad-fb212737c568)
+
 
 ### Second approach
 * Since storage/database is not as fast as RAM, a BlokingQueue added before storage/database.
 As project progressed I found a problem with storage/database queue that had added in this step!
-![design2](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/b8d123dd-1613-420e-9054-43be9c255226)
+![second](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/e7ef7bf4-16b0-4634-aeb3-ae08014c690c)
 
 ### Third approach
 If some instruments are still in the queue waiting for their turn, so the database has not been updated, but another producer has generated the same instruments, how can we compare the price data with the instrument that still is in the queue, not the database?
@@ -63,7 +64,8 @@ If we read updated data from cache(is next to blocking queue, we put the instrum
 Five threads are considered for reading data from the storage queue and updating storage (This number is extracted from the load test).
 But user can start as many updater worker threads as required.
 
-![final-design](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/e88f4cf6-4668-47b2-8f90-e20bddfe5836)
+![last](https://github.com/ma-sharifi/last-value-price-service/assets/8404721/c27b8491-af27-4c7b-bef8-9d2616013bed)
+
 
 ## Explain Price Tracking Service (InMemoryPriceTrackingService.java)
 
